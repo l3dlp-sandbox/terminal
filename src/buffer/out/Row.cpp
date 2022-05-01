@@ -3,29 +3,26 @@
 
 #include "precomp.h"
 #include "Row.hpp"
-#include "CharRow.hpp"
 #include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 
 // Routine Description:
 // - constructor
 // Arguments:
-// - rowId - the row index in the text buffer
 // - rowWidth - the width of the row, cell elements
 // - fillAttribute - the default text attribute
-// - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
-    _id{ rowId },
-    _rowWidth{ rowWidth },
-    _charRow{ rowWidth, this },
-    _attrRow{ rowWidth, fillAttribute },
+ROW::ROW(wchar_t* buffer, uint16_t* indices, const unsigned short rowWidth, const TextAttribute& fillAttribute) :
+    _chars{ buffer },
+    _charsCapacity{ rowWidth },
+    _indices{ indices },
+    _indicesCount{ rowWidth },
     _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
-    _doubleBytePadded{ false },
-    _pParent{ pParent }
+    _doubleBytePadded{ false }
 {
+    Reset(fillAttribute);
 }
 
 // Routine Description:
@@ -34,42 +31,17 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Reset(const TextAttribute Attr)
+bool ROW::Reset(const TextAttribute& Attr)
 {
+    wmemset(_chars, UNICODE_SPACE, _indicesCount);
+    std::iota(_indices, _indices + _indicesCount + 1, static_cast<uint16_t>(0));
+
+    _attr = { gsl::narrow_cast<uint16_t>(_indicesCount), Attr };
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
-    _charRow.Reset();
-    try
-    {
-        _attrRow.Reset(Attr);
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        return false;
-    }
+
     return true;
-}
-
-// Routine Description:
-// - resizes ROW to new width
-// Arguments:
-// - width - the new width, in cells
-// Return Value:
-// - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
-{
-    RETURN_IF_FAILED(_charRow.Resize(width));
-    try
-    {
-        _attrRow.Resize(width);
-    }
-    CATCH_RETURN();
-
-    _rowWidth = width;
-
-    return S_OK;
 }
 
 // Routine Description:
@@ -80,18 +52,8 @@ bool ROW::Reset(const TextAttribute Attr)
 // - <none>
 void ROW::ClearColumn(const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
-    _charRow.ClearCell(column);
-}
-
-UnicodeStorage& ROW::GetUnicodeStorage() noexcept
-{
-    return _pParent->GetUnicodeStorage();
-}
-
-const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
-{
-    return _pParent->GetUnicodeStorage();
+    THROW_HR_IF(E_INVALIDARG, column >= size());
+    ClearCell(column);
 }
 
 // Routine Description:
@@ -105,11 +67,11 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // - iterator to first cell that was not written to this row.
 OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
-    THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
-    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
+    THROW_HR_IF(E_INVALIDARG, index >= size());
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= size());
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
-    const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
+    const auto finalColumnInRow = limitRight.value_or(size() - 1);
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
@@ -131,7 +93,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             {
                 // Otherwise, commit this color into the run and save off the new one.
                 // Now commit the new color runs into the attr row.
-                _attrRow.Replace(colorStarts, currentIndex, currentColor);
+                Replace(colorStarts, currentIndex, currentColor);
                 currentColor = it->TextAttr();
                 colorUses = 1;
                 colorStarts = currentIndex;
@@ -151,20 +113,19 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             // Don't increment iterator. We'll advance the index and try again with this value on the next round through the loop.
             if (currentIndex == 0 && it->DbcsAttr().IsTrailing())
             {
-                _charRow.ClearCell(currentIndex);
+                ClearCell(currentIndex);
             }
             // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
             // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
             else if (fillingLastColumn && it->DbcsAttr().IsLeading())
             {
-                _charRow.ClearCell(currentIndex);
+                ClearCell(currentIndex);
                 SetDoubleBytePadded(true);
             }
             // Otherwise, copy the data given and increment the iterator.
             else
             {
-                _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
-                _charRow.GlyphAt(currentIndex) = it->Chars();
+                Replace(currentIndex, it->DbcsAttr(), it->Chars());
                 ++it;
             }
 
@@ -191,7 +152,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     // Now commit the final color into the attr row
     if (colorUses)
     {
-        _attrRow.Replace(colorStarts, currentIndex, currentColor);
+        Replace(colorStarts, currentIndex, currentColor);
     }
 
     return it;
