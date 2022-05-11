@@ -173,9 +173,9 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalTriggerResize(
                 this.terminal,
-                Convert.ToInt16(renderSize.Width),
-                Convert.ToInt16(renderSize.Height),
-                out NativeMethods.COORD dimensions);
+                (int)renderSize.Width,
+                (int)renderSize.Height,
+                out NativeMethods.TilSize dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -185,52 +185,15 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Resizes the terminal using row and column count as the new size.
-        /// </summary>
-        /// <param name="rows">Number of rows to show.</param>
-        /// <param name="columns">Number of columns to show.</param>
-        internal void Resize(uint rows, uint columns)
-        {
-            if (rows == 0)
-            {
-                throw new ArgumentException("Terminal row count cannot be 0.", nameof(rows));
-            }
-            else if (columns == 0)
-            {
-                throw new ArgumentException("Terminal column count cannot be 0.", nameof(columns));
-            }
-
-            NativeMethods.SIZE dimensionsInPixels;
-            NativeMethods.COORD dimensions = new NativeMethods.COORD
-            {
-                X = (short)columns,
-                Y = (short)rows,
-            };
-
-            NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out dimensionsInPixels);
-
-            this.Columns = dimensions.X;
-            this.Rows = dimensions.Y;
-
-            this.TerminalRendererSize = new Size()
-            {
-                Width = dimensionsInPixels.cx,
-                Height = dimensionsInPixels.cy,
-            };
-
-            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
-        }
-
-        /// <summary>
         /// Calculates the rows and columns that would fit in the given size.
         /// </summary>
         /// <param name="size">DPI scaled size.</param>
         /// <returns>Amount of rows and columns that would fit the given size.</returns>
-        internal (uint columns, uint rows) CalculateRowsAndColumns(Size size)
+        internal (int columns, int rows) CalculateRowsAndColumns(Size size)
         {
-            NativeMethods.TerminalCalculateResize(this.terminal, (short)size.Width, (short)size.Height, out NativeMethods.COORD dimensions);
+            NativeMethods.TerminalCalculateResize(this.terminal, (int)size.Width, (int)size.Height, out NativeMethods.TilSize dimensions);
 
-            return ((uint)dimensions.X, (uint)dimensions.Y);
+            return (dimensions.X, dimensions.Y);
         }
 
         /// <summary>
@@ -242,7 +205,7 @@ namespace Microsoft.Terminal.Wpf
 
             if (this.Columns < columns || this.Rows < rows)
             {
-                this.connection?.Resize(rows, columns);
+                this.connection?.Resize((uint)rows, (uint)columns);
             }
         }
 
@@ -368,11 +331,11 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
-                        NativeMethods.COORD dimensions;
+                        NativeMethods.TilSize dimensions;
 
                         if (this.AutoResize)
                         {
-                            NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
+                            NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
 
                             this.Columns = dimensions.X;
                             this.Rows = dimensions.Y;
@@ -386,7 +349,7 @@ namespace Microsoft.Terminal.Wpf
                         else
                         {
                             // Calculate the new columns and rows that fit the total control size and alert the control to redraw the margins.
-                            NativeMethods.TerminalCalculateResize(this.terminal, (short)this.TerminalControlSize.Width, (short)this.TerminalControlSize.Height, out dimensions);
+                            NativeMethods.TerminalCalculateResize(this.terminal, (int)this.TerminalControlSize.Width, (int)this.TerminalControlSize.Height, out dimensions);
                         }
 
                         this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
@@ -405,9 +368,9 @@ namespace Microsoft.Terminal.Wpf
         private void LeftClickHandler(int lParam)
         {
             var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
-            var x = (short)(((int)lParam << 16) >> 16);
-            var y = (short)((int)lParam >> 16);
-            NativeMethods.COORD cursorPosition = new NativeMethods.COORD()
+            var x = lParam & 0xffff;
+            var y = lParam >> 16;
+            var cursorPosition = new NativeMethods.TilPoint()
             {
                 X = x,
                 Y = y,
@@ -418,11 +381,11 @@ namespace Microsoft.Terminal.Wpf
 
         private void MouseMoveHandler(int wParam, int lParam)
         {
-            if (((int)wParam & 0x0001) == 1)
+            if ((wParam & 0x0001) == 1)
             {
-                var x = (short)(((int)lParam << 16) >> 16);
-                var y = (short)((int)lParam >> 16);
-                NativeMethods.COORD cursorPosition = new NativeMethods.COORD()
+                var x = lParam & 0xffff;
+                var y = lParam >> 16;
+                var cursorPosition = new NativeMethods.TilPoint()
                 {
                     X = x,
                     Y = y,

@@ -49,14 +49,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,
-                            const unsigned int pointerUpdateKind,
+                            const uint32_t pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
         void TouchPressed(const Core::Point contactPoint);
 
         void PointerMoved(Control::MouseButtonState buttonState,
-                          const unsigned int pointerUpdateKind,
+                          const uint32_t pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
                           const Core::Point pixelPosition,
@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const bool focused);
 
         void PointerReleased(Control::MouseButtonState buttonState,
-                             const unsigned int pointerUpdateKind,
+                             const uint32_t pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
         void TouchReleased();
@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         bool _selectionNeedsToBeCopied;
 
-        std::optional<COORD> _lastHoveredCell{ std::nullopt };
+        std::optional<til::point> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId{ 0 };
 
@@ -146,9 +146,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point _getTerminalPosition(const til::point pixelPosition);
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
-                                   const unsigned int pointerUpdateKind,
+                                   const uint32_t pointerUpdateKind,
                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                   const SHORT wheelDelta,
+                                   const int32_t wheelDelta,
                                    Control::MouseButtonState buttonState);
 
         friend class ControlUnitTests::ControlCoreTests;

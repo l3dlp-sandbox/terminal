@@ -31,7 +31,7 @@ private:
 
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
-    RECT _proposedRect{};
+    til::rect _proposedRect;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
@@ -40,7 +40,7 @@ private:
     void _HandleCommandlineArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
-    void _HandleCreateWindow(const HWND hwnd, RECT proposedRect);
+    void _HandleCreateWindow(const HWND hwnd, const til::rect& proposedRect);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
@@ -126,7 +126,7 @@ private:
     void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& args);
 
-    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _initialResizeAndRepositionWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;

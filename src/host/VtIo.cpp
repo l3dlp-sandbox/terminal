@@ -374,7 +374,7 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const til::point coordCursor)
 {
     auto hr = S_OK;
     if (_lookingForCursorPosition)

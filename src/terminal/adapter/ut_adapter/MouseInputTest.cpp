@@ -113,7 +113,7 @@ public:
     // Routine Description:
     // Constructs a string from s_rgDefaultTestOutput with the third char
     //      correctly filled in to match uiButton.
-    wchar_t* BuildDefaultTestOutput(const wchar_t* pwchTestOutput, unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
+    wchar_t* BuildDefaultTestOutput(const wchar_t* pwchTestOutput, uint32_t uiButton, uint32_t sModifierKeystate, til::CoordType sScrollDelta)
     {
         Log::Comment(NoThrowString().Format(L"Input Test Output:\'%s\'", pwchTestOutput));
         // Copy the expected output into the buffer
@@ -136,7 +136,7 @@ public:
     // Routine Description:
     // Constructs a string from s_rgSgrTestOutput with the third and last chars
     //      correctly filled in to match uiButton.
-    wchar_t* BuildSGRTestOutput(const wchar_t* pwchTestOutput, unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
+    wchar_t* BuildSGRTestOutput(const wchar_t* pwchTestOutput, uint32_t uiButton, uint32_t sModifierKeystate, til::CoordType sScrollDelta)
     {
         ClearTestBuffer();
 
@@ -152,7 +152,7 @@ public:
         return s_pwszExpectedBuffer;
     }
 
-    wchar_t GetDefaultCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
+    wchar_t GetDefaultCharFromButton(uint32_t uiButton, uint32_t sModifierKeystate, til::CoordType sScrollDelta)
     {
         auto wch = L'\x0';
         Log::Comment(NoThrowString().Format(L"uiButton '%d'", uiButton));
@@ -193,7 +193,7 @@ public:
         return wch;
     }
 
-    int GetSgrCharFromButton(unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
+    int GetSgrCharFromButton(uint32_t uiButton, uint32_t sModifierKeystate, til::CoordType sScrollDelta)
     {
         auto result = 0;
         switch (uiButton)
@@ -231,7 +231,7 @@ public:
         return result;
     }
 
-    bool IsButtonDown(unsigned int uiButton)
+    bool IsButtonDown(uint32_t uiButton)
     {
         auto fIsDown = false;
         switch (uiButton)
@@ -288,10 +288,10 @@ public:
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        auto sModifierKeystate = (SHORT)uiModifierKeystate;
-        short sScrollDelta = 0;
+        auto sModifierKeystate = (til::CoordType)uiModifierKeystate;
+        til::CoordType sScrollDelta = 0;
 
-        unsigned int uiButton;
+        uint32_t uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
         auto fExpectedKeyHandled = false;
@@ -371,10 +371,10 @@ public:
 
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        auto sModifierKeystate = (SHORT)uiModifierKeystate;
-        short sScrollDelta = 0;
+        auto sModifierKeystate = (til::CoordType)uiModifierKeystate;
+        til::CoordType sScrollDelta = 0;
 
-        unsigned int uiButton;
+        uint32_t uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
         auto fExpectedKeyHandled = false;
@@ -457,10 +457,10 @@ public:
         auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        auto sModifierKeystate = (SHORT)uiModifierKeystate;
-        short sScrollDelta = 0;
+        auto sModifierKeystate = (til::CoordType)uiModifierKeystate;
+        til::CoordType sScrollDelta = 0;
 
-        unsigned int uiButton;
+        uint32_t uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
         auto fExpectedKeyHandled = false;
@@ -538,12 +538,12 @@ public:
         auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
         unsigned int uiModifierKeystate = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
-        auto sModifierKeystate = (SHORT)uiModifierKeystate;
+        auto sModifierKeystate = (til::CoordType)uiModifierKeystate;
 
-        unsigned int uiButton = WM_MOUSEWHEEL;
+        uint32_t uiButton = WM_MOUSEWHEEL;
         auto iScrollDelta = 0;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"sScrollDelta", iScrollDelta));
-        auto sScrollDelta = (short)(iScrollDelta);
+        auto sScrollDelta = (til::CoordType)(iScrollDelta);
 
         auto fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
@@ -616,7 +616,7 @@ public:
     {
         Log::Comment(L"Starting test...");
         auto mouseInput = std::make_unique<TerminalInput>(s_MouseInputTestCallback);
-        const short noModifierKeys = 0;
+        const til::CoordType noModifierKeys = 0;
 
         Log::Comment(L"Enable alternate scroll mode in the alt screen buffer");
         mouseInput->UseAlternateScreenBuffer();

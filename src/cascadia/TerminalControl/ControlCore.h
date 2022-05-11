@@ -126,9 +126,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool SendMouseEvent(const til::point viewportPos,
-                            const unsigned int uiButton,
+                            const uint32_t uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
-                            const short wheelDelta,
+                            const int32_t wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
 
@@ -142,14 +142,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
-        bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
+        bool ShouldSendAlternateScroll(const uint32_t uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
-        void SetSelectionAnchor(const til::point& position);
-        void SetEndSelectionPoint(const til::point& position);
+        void SetSelectionAnchor(const til::point position);
+        void SetEndSelectionPoint(const til::point position);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,

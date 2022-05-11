@@ -33,13 +33,13 @@ public:
     static void s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo);
     static void s_HandleMouseWheel(_In_ bool isMouseWheel,
                                    _In_ bool isMouseHWheel,
-                                   _In_ short wheelDelta,
+                                   _In_ int16_t wheelDelta,
                                    _In_ bool hasShift,
                                    SCREEN_INFORMATION& ScreenInfo);
     static bool s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo);
 
 private:
-    static BOOL s_IsPointInRectangle(const RECT* const prc, const POINT pt);
+    static BOOL s_IsPointInRectangle(const til::rect* prc, const til::point pt);
 
     static ULONG s_ucWheelScrollLines;
     static ULONG s_ucWheelScrollChars;

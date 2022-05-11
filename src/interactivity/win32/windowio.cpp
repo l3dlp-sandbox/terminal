@@ -116,10 +116,10 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(const COORD cMousePosition,
-                              const unsigned int uiButton,
-                              const short sModifierKeystate,
-                              const short sWheelDelta)
+bool HandleTerminalMouseEvent(const til::point cMousePosition,
+                              const uint32_t uiButton,
+                              const uint32_t sModifierKeystate,
+                              const int32_t sWheelDelta)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If the modes don't align, this is unhandled by default.
@@ -141,7 +141,7 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
         auto clampedPosition{ cMousePosition };
         const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
         clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(til::wrap_coord(clampedPosition), uiButton, sModifierKeystate, sWheelDelta, state);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
@@ -612,16 +612,16 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     //  results on systems with multiple monitors. Systems with multiple monitors
     //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
     //  coordinates as unsigned quantities.
-    short x = GET_X_LPARAM(lParam);
-    short y = GET_Y_LPARAM(lParam);
+    const auto x = GET_X_LPARAM(lParam);
+    const auto y = GET_Y_LPARAM(lParam);
 
-    COORD MousePosition;
+    til::point MousePosition;
     // If it's a *WHEEL event, it's in screen coordinates, not window
     if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
     {
         POINT coords = { x, y };
         ScreenToClient(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &coords);
-        MousePosition = { (SHORT)coords.x, (SHORT)coords.y };
+        MousePosition = { coords.x, coords.y };
     }
     else
     {

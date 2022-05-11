@@ -440,10 +440,10 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 
             // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
             const auto vkey = keyEvent.GetVirtualKeyCode();
-            const short keyScanFromEvent = vkey |
-                                           (shift ? 0x100 : 0) |
-                                           (ctrl ? 0x200 : 0) |
-                                           (alt ? 0x400 : 0);
+            const auto keyScanFromEvent = vkey |
+                                          (shift ? 0x100 : 0) |
+                                          (ctrl ? 0x200 : 0) |
+                                          (alt ? 0x400 : 0);
 
             // Make sure the VKEY is an _exact_ match, and that the modifier
             // bits also match. This handles the hypothetical case we get a

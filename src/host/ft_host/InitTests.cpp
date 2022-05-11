@@ -68,6 +68,8 @@ END_MODULE()
 
 MODULE_SETUP(ModuleSetup)
 {
+    SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     // The sources files inside windows use a C define to say it's inside windows and we should be
     // testing against the inbox conhost. This is awesome for inbox TAEF RI gate tests so it uses
     // the one generated from the same build.
@@ -238,45 +240,6 @@ MODULE_SETUP(ModuleSetup)
     // Wait a moment for the driver to be ready after freeing to attach.
     Sleep(1000);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
-
-    auto tries = 0;
-    while (tries < 5)
-    {
-        tries++;
-        Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
-
-        // Replace CRT handles
-        // These need to be reopened as read/write or they can affect some of the tests.
-        //
-        // std_out and std_in need to be closed when tests are finished, this is handled by the wil::scope_exit at the
-        // top of this file.
-        auto err = 0;
-        err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
-        VERIFY_ARE_EQUAL(0, err);
-        err = freopen_s(&std_in, "CONIN$", "r+", stdin);
-        VERIFY_ARE_EQUAL(0, err);
-
-        // Now, try to get at the console we've set up. It's possible 1s wasn't long enough. If that was, we'll try again.
-
-        const auto hOut = GetStdOutputHandle();
-        VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
-
-        CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
-        csbiexBefore.cbSize = sizeof(csbiexBefore);
-        auto succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
-        if (!succeeded)
-        {
-            auto gle = GetLastError();
-            VERIFY_ARE_EQUAL(6u, gle, L"If we fail to set up the console, GetLastError should return 6 here.");
-            Sleep(1000);
-        }
-        else
-        {
-            break;
-        }
-    };
-
-    VERIFY_IS_LESS_THAN(tries, 5, L"Make sure we set up the new console in time");
 
     return true;
 }

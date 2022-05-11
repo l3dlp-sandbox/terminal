@@ -24,7 +24,7 @@ static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 // - button - the message to decode.
 // Return value:
 // - true iff button is a button message to translate
-static constexpr bool _isButtonMsg(const unsigned int button) noexcept
+static constexpr bool _isButtonMsg(const uint32_t button) noexcept
 {
     switch (button)
     {
@@ -51,7 +51,7 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 // - buttonCode - the message to decode.
 // Return value:
 // - true iff buttonCode is a hover enent to translate
-static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
+static constexpr bool _isHoverMsg(const uint32_t buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEMOVE;
 }
@@ -62,7 +62,7 @@ static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 // - buttonCode - the message to decode.
 // Return value:
 // - true iff buttonCode is a wheel event to translate
-static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
+static constexpr bool _isWheelMsg(const uint32_t buttonCode) noexcept
 {
     return buttonCode == WM_MOUSEWHEEL || buttonCode == WM_MOUSEHWHEEL;
 }
@@ -74,7 +74,7 @@ static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
 // - button - the message to decode.
 // Return value:
 // - true iff button is a button down event
-static constexpr bool _isButtonDown(const unsigned int button) noexcept
+static constexpr bool _isButtonDown(const uint32_t button) noexcept
 {
     switch (button)
     {
@@ -99,10 +99,10 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
 // - state - the current state of which mouse buttons are pressed
 // Return value:
 // - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
-constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState state) noexcept
+constexpr uint32_t TerminalInput::s_GetPressedButton(const MouseButtonState state) noexcept
 {
     // Will be treated as a release, or no button pressed.
-    unsigned int button = WM_LBUTTONUP;
+    uint32_t button = WM_LBUTTONUP;
     if (state.isLeftButtonDown)
     {
         button = WM_LBUTTONDOWN;
@@ -147,10 +147,10 @@ constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState 
 // - delta - scroll wheel delta
 // Return value:
 // - the int representing the equivalent X button encoding.
-static constexpr int _windowsButtonToXEncoding(const unsigned int button,
+static constexpr int _windowsButtonToXEncoding(const uint32_t button,
                                                const bool isHover,
-                                               const short modifierKeyState,
-                                               const short delta) noexcept
+                                               const uint32_t modifierKeyState,
+                                               const int32_t delta) noexcept
 {
     auto xvalue = 0;
     switch (button)
@@ -204,10 +204,10 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
 // - modifierKeyState - the modifier keys _in console format_
 // Return value:
 // - the int representing the equivalent X button encoding.
-static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
+static constexpr int _windowsButtonToSGREncoding(const uint32_t button,
                                                  const bool isHover,
-                                                 const short modifierKeyState,
-                                                 const short delta) noexcept
+                                                 const uint32_t modifierKeyState,
+                                                 const int32_t delta) noexcept
 {
     auto xvalue = 0;
     switch (button)
@@ -298,9 +298,9 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // Return value:
 // - true if the event was handled and we should stop event propagation to the default window handler.
 bool TerminalInput::HandleMouse(const til::point position,
-                                const unsigned int button,
-                                const short modifierKeyState,
-                                const short delta,
+                                const uint32_t button,
+                                const uint32_t modifierKeyState,
+                                const int32_t delta,
                                 const MouseButtonState state)
 {
     if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
@@ -427,10 +427,10 @@ bool TerminalInput::HandleMouse(const til::point position,
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
 std::wstring TerminalInput::_GenerateDefaultSequence(const til::point position,
-                                                     const unsigned int button,
+                                                     const uint32_t button,
                                                      const bool isHover,
-                                                     const short modifierKeyState,
-                                                     const short delta)
+                                                     const uint32_t modifierKeyState,
+                                                     const int32_t delta)
 {
     // In the default, non-extended encoding scheme, coordinates above 94 shouldn't be supported,
     //   because (95+32+1)=128, which is not an ASCII character.
@@ -464,10 +464,10 @@ std::wstring TerminalInput::_GenerateDefaultSequence(const til::point position,
 // Return value:
 // - The generated sequence. Will be empty if we couldn't generate.
 std::wstring TerminalInput::_GenerateUtf8Sequence(const til::point position,
-                                                  const unsigned int button,
+                                                  const uint32_t button,
                                                   const bool isHover,
-                                                  const short modifierKeyState,
-                                                  const short delta)
+                                                  const uint32_t modifierKeyState,
+                                                  const int32_t delta)
 {
     // So we have some complications here.
     // The windows input stream is typically encoded as UTF16.
@@ -515,11 +515,11 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const til::point position,
 // - true if we were able to successfully generate a sequence.
 // On success, caller is responsible for delete[]ing *ppwchSequence.
 std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
-                                                 const unsigned int button,
+                                                 const uint32_t button,
                                                  const bool isDown,
                                                  const bool isHover,
-                                                 const short modifierKeyState,
-                                                 const short delta)
+                                                 const uint32_t modifierKeyState,
+                                                 const int32_t delta)
 {
     // Format for SGR events is:
     // "\x1b[<%d;%d;%d;%c", xButton, x+1, y+1, fButtonDown? 'M' : 'm'
@@ -539,7 +539,7 @@ std::wstring TerminalInput::_GenerateSGRSequence(const til::point position,
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
-bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
+bool TerminalInput::ShouldSendAlternateScroll(const uint32_t button, const int32_t delta) const noexcept
 {
     const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
     const auto inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
@@ -553,7 +553,7 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
+bool TerminalInput::_SendAlternateScroll(const int32_t delta) const noexcept
 {
     if (delta > 0)
     {

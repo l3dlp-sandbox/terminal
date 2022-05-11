@@ -32,6 +32,7 @@
     <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CTerminalHandoff.cpp" />

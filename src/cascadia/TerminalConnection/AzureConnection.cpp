@@ -15,6 +15,8 @@
 #include "winrt/Windows.System.UserProfile.h"
 #include "../../types/inc/Utils.hpp"
 
+#include "utils.h"
+
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Azure;
 
@@ -75,8 +77,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _initialRows = extractValueSetCoord(settings, L"initialRows", _initialRows);
+            _initialCols = extractValueSetCoord(settings, L"initialCols", _initialCols);
         }
     }
 

@@ -25,14 +25,14 @@ $result = "// Copyright (c) Microsoft Corporation.
 $result += "
 // Define a few helpful variables
 constexpr til::rect bufferSize{ 0, 0, 80, 300 };
-constexpr short midX{ 40 };
-constexpr short midY{ 150 };
-constexpr short midPopulatedY{ 75 };
-constexpr short segment0{ 0 };
-constexpr short segment1{ 16 };
-constexpr short segment2{ 32 };
-constexpr short segment3{ 48 };
-constexpr short segment4{ 64 };
+constexpr il::CoordType midX{ 40 };
+constexpr il::CoordType midY{ 150 };
+constexpr il::CoordType midPopulatedY{ 75 };
+constexpr il::CoordType segment0{ 0 };
+constexpr il::CoordType segment1{ 16 };
+constexpr il::CoordType segment2{ 32 };
+constexpr il::CoordType segment3{ 48 };
+constexpr il::CoordType segment4{ 64 };
 constexpr til::point origin{ 0, 0 };
 constexpr til::point midTop{ midX, 0 };
 constexpr til::point midHistory{ midX, midPopulatedY };

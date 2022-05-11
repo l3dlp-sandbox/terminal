@@ -70,13 +70,13 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         bool HandleMouse(const til::point position,
-                         const unsigned int button,
-                         const short modifierKeyState,
-                         const short delta,
+                         const uint32_t button,
+                         const uint32_t modifierKeyState,
+                         const int32_t delta,
                          const MouseButtonState state);
 
         bool IsTrackingMouseInput() const noexcept;
-        bool ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
+        bool ShouldSendAlternateScroll(const uint32_t button, const int32_t delta) const noexcept;
 #pragma endregion
 
 #pragma region MouseInputState Management
@@ -106,7 +106,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             bool inAlternateBuffer{ false };
             til::point lastPos{ -1, -1 };
-            unsigned int lastButton{ 0 };
+            uint32_t lastButton{ 0 };
             int accumulatedDelta{ 0 };
         };
 
@@ -115,25 +115,25 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInput
         static std::wstring _GenerateDefaultSequence(const til::point position,
-                                                     const unsigned int button,
+                                                     const uint32_t button,
                                                      const bool isHover,
-                                                     const short modifierKeyState,
-                                                     const short delta);
+                                                     const uint32_t modifierKeyState,
+                                                     const int32_t delta);
         static std::wstring _GenerateUtf8Sequence(const til::point position,
-                                                  const unsigned int button,
+                                                  const uint32_t button,
                                                   const bool isHover,
-                                                  const short modifierKeyState,
-                                                  const short delta);
+                                                  const uint32_t modifierKeyState,
+                                                  const int32_t delta);
         static std::wstring _GenerateSGRSequence(const til::point position,
-                                                 const unsigned int button,
+                                                 const uint32_t button,
                                                  const bool isDown,
                                                  const bool isHover,
-                                                 const short modifierKeyState,
-                                                 const short delta);
+                                                 const uint32_t modifierKeyState,
+                                                 const int32_t delta);
 
-        bool _SendAlternateScroll(const short delta) const noexcept;
+        bool _SendAlternateScroll(const int32_t delta) const noexcept;
 
-        static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
+        static constexpr uint32_t s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
     };
 }

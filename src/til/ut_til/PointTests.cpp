@@ -9,6 +9,13 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::point::as_win32_point
+static_assert(
+    sizeof(til::point) == sizeof(POINT) &&
+    alignof(til::point) == alignof(POINT) &&
+    offsetof(til::point, x) == offsetof(POINT, x) &&
+    offsetof(til::point, y) == offsetof(POINT, y));
+
 class PointTests
 {
     TEST_CLASS(PointTests);
@@ -521,13 +528,13 @@ class PointTests
     TEST_METHOD(XCast)
     {
         const til::point pt{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(pt.x), pt.narrow_x<SHORT>());
+        VERIFY_ARE_EQUAL(static_cast<til::CoordType>(pt.x), pt.narrow_x<til::CoordType>());
     }
 
     TEST_METHOD(YCast)
     {
         const til::point pt{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(pt.x), pt.narrow_x<SHORT>());
+        VERIFY_ARE_EQUAL(static_cast<til::CoordType>(pt.x), pt.narrow_x<til::CoordType>());
     }
 
     TEST_METHOD(CastToPoint)

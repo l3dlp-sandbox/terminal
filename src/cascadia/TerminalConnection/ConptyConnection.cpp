@@ -14,6 +14,8 @@
 #include "../../types/inc/Environment.hpp"
 #include "LibraryResources.h"
 
+#include "utils.h"
+
 using namespace ::Microsoft::Console;
 using namespace std::string_view_literals;
 
@@ -45,7 +47,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
     // - phPc: Receives a token value to identify this conpty
 #pragma warning(suppress : 26430) // This statement sufficiently checks the out parameters. Analyzer cannot find this.
-    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
+    static HRESULT _CreatePseudoConsoleAndPipes(const til::size size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
     {
         RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
 
@@ -54,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0));
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, nullptr, 0));
-        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
+        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size.to_win32_coord(), inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
         *phInput = inPipeOurSide.release();
         *phOutput = outPipeOurSide.release();
         return S_OK;
@@ -226,8 +228,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
                                                                                 const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-                                                                                uint32_t rows,
-                                                                                uint32_t columns,
+                                                                                til::CoordType rows,
+                                                                                til::CoordType columns,
                                                                                 const winrt::guid& guid)
     {
         Windows::Foundation::Collections::ValueSet vs{};
@@ -235,8 +237,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
         vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
         vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
-        vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
-        vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
+        vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow<uint32_t>(rows)));
+        vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow<uint32_t>(columns)));
         vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
 
         if (environment)
@@ -259,16 +261,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // auto bad = unbox_value_or<hstring>(settings.TryLookup(L"foo").try_as<IPropertyValue>(), nullptr);
             // It'll just return null
 
-            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
-            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
-            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
-            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
+            _commandline = extractValueSet<winrt::hstring>(settings, L"commandline", _commandline);
+            _startingDirectory = extractValueSet<winrt::hstring>(settings, L"startingDirectory", _startingDirectory);
+            _startingTitle = extractValueSet<winrt::hstring>(settings, L"startingTitle", _startingTitle);
+            _initialRows = extractValueSetCoord(settings, L"initialRows", _initialRows);
+            _initialCols = extractValueSetCoord(settings, L"initialCols", _initialCols);
+            _guid = extractValueSet<winrt::guid>(settings, L"guid", _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+                _passthroughMode = extractValueSet<bool>(settings, L"passthroughMode", _passthroughMode);
             }
         }
 
@@ -293,7 +295,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Connecting);
 
-        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+        const til::size dimensions{ _initialCols, _initialRows };
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
@@ -334,7 +336,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions.to_win32_coord()));
             THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
         }
 
@@ -465,7 +467,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         LOG_IF_WIN32_BOOL_FALSE(WriteFile(_inPipe.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
     }
 
-    void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
+    void ConptyConnection::Resize(til::CoordType rows, til::CoordType columns)
     {
         // If we haven't started connecting at all, it's still fair to update
         // the initial rows and columns before we set things up.
